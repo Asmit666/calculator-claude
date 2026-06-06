@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║          INTERACTIVE GRID CALCULATOR — index.html           ║
+  ║                                                              ║
+  ║  LEARNING OBJECTIVES:                                        ║
+  ║  1. Semantic HTML for accessible document structure          ║
+  ║  2. data-* attributes as the HTML→JavaScript communication   ║
+  ║     bridge (how JS knows which button was clicked)           ║
+  ║  3. ARIA roles & labels for screen-reader accessibility      ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    viewport meta tag is critical for responsive design:
+    - width=device-width  → match the device's actual screen width
+    - initial-scale=1.0   → don't zoom in or out on load
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="An interactive grid calculator tutorial demonstrating event delegation, string manipulation, and custom math parsing in vanilla JavaScript." />
+  <title>Grid Calculator — JS Tutorial</title>
+
+  <!-- Google Fonts: Share Tech Mono (display) + Exo 2 (UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Separated CSS file: styles live here, not in <style> tags -->
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+
+<body>
+
+  <!--
+    <main> is a semantic landmark element.
+    Screen readers use it to jump directly to the primary content,
+    skipping headers, footers, and navigation.
+  -->
+  <main class="page-wrapper">
+
+    <!-- ═══════════════════════════════════
+         §A. PAGE HEADER
+         ─────────────────────────────────
+         <header> scopes contextual heading info.
+         Inside <main>, it labels this feature section.
+    ════════════════════════════════════ -->
+    <header class="calc-header">
+      <h1 class="calc-title">Grid Calculator</h1>
+      <p class="calc-subtitle">
+        A tutorial in event delegation, string manipulation &amp; custom parsing
+      </p>
+      <!-- Keyboard shortcut hint -->
+      <p class="keyboard-hint">
+        ⌨ Supports full keyboard input · <kbd>Esc</kbd> to clear · <kbd>⌫</kbd> to delete
+      </p>
+    </header>
+
+    <!-- ═══════════════════════════════════
+         §B. CALCULATOR WIDGET
+         ─────────────────────────────────
+         <section> groups a thematically related block of content.
+         aria-label gives screen readers a human-readable name for
+         this section since it has no visible heading of its own.
+    ════════════════════════════════════ -->
+    <section class="calculator" aria-label="Calculator">
+
+      <!-- ── DISPLAY SCREEN ─────────────────────────────
+           role="region" + aria-label makes this a named
+           landmark that screen readers can navigate to.
+           aria-live="polite" tells screen readers to announce
+           changes to this element without interrupting speech.
+      ─────────────────────────────────────────────────── -->
+      <div class="display-wrapper" role="region" aria-label="Calculator display">
+        <!-- Shows the previously completed equation -->
+        <div
+          class="history-display"
+          id="history"
+          aria-label="Previous calculation"
+        ></div>
+
+        <!-- Shows the expression being built (e.g. "12+3*") -->
+        <div
+          class="expression-display"
+          id="expression"
+          aria-live="polite"
+          aria-label="Current expression"
+        >0</div>
+      </div>
+
+      <!-- ── BUTTON GRID ────────────────────────────────
+           KEY ARCHITECTURAL DECISION — data-* attributes:
+           ─────────────────────────────────────────────
+           Each button carries two data attributes:
+             data-type  → what KIND of action ("number", "operator", etc.)
+             data-value → what specific value ("7", "+", "=" etc.)
+
+           This is the "message" from HTML to JavaScript.
+           Our single JS event listener reads these attributes
+           to decide what to do — no hard-coded checks needed.
+
+           WHY data-* over classes or IDs?
+             • Classes are for styling, not behavior semantics.
+             • IDs must be unique — won't scale.
+             • data-* attributes are the HTML spec's designated
+               way to embed custom metadata in elements.
+
+           ARIA role="group" + aria-label makes this a named
+           group for screen reader navigation.
+      ─────────────────────────────────────────────────── -->
+      <div
+        class="button-grid"
+        id="button-grid"
+        role="group"
+        aria-label="Calculator buttons"
+      >
+
+        <!-- ┌─────────────────────────────────────────┐
+             │  ROW 1: Function / Utility Row          │
+             └─────────────────────────────────────────┘ -->
+        <button
+          class="btn btn-clear"
+          data-type="clear"
+          data-value="C"
+          aria-label="Clear all"
+          title="Clear (Esc)"
+        >C</button>
+
+        <button
+          class="btn btn-function"
+          data-type="sign"
+          data-value="+/-"
+          aria-label="Toggle positive or negative"
+        >+/-</button>
+
+        <button
+          class="btn btn-function"
+          data-type="percent"
+          data-value="%"
+          aria-label="Percent"
+        >%</button>
+
+        <!--
+          Cosmetic vs. internal value distinction:
+          The button DISPLAYS "÷" (Unicode division sign) for aesthetics,
+          but data-value="/" stores the actual operator character
+          that our JS string and parser understand.
+        -->
+        <button
+          class="btn btn-operator"
+          data-type="operator"
+          data-value="/"
+          aria-label="Divide"
+        >÷</button>
+
+
+        <!-- ┌─────────────────────────────────────────┐
+             │  ROW 2: 7 8 9 ×                        │
+             └─────────────────────────────────────────┘ -->
+        <button class="btn btn-number" data-type="number" data-value="7" aria-label="7">7</button>
+        <button class="btn btn-number" data-type="number" data-value="8" aria-label="8">8</button>
+        <button class="btn btn-number" data-type="number" data-value="9" aria-label="9">9</button>
+        <button
+          class="btn btn-operator"
+          data-type="operator"
+          data-value="*"
+          aria-label="Multiply"
+        >×</button>
+
+
+        <!-- ┌─────────────────────────────────────────┐
+             │  ROW 3: 4 5 6 −                        │
+             └─────────────────────────────────────────┘ -->
+        <button class="btn btn-number" data-type="number" data-value="4" aria-label="4">4</button>
+        <button class="btn btn-number" data-type="number" data-value="5" aria-label="5">5</button>
+        <button class="btn btn-number" data-type="number" data-value="6" aria-label="6">6</button>
+        <button
+          class="btn btn-operator"
+          data-type="operator"
+          data-value="-"
+          aria-label="Subtract"
+        >−</button>
+
+
+        <!-- ┌─────────────────────────────────────────┐
+             │  ROW 4: 1 2 3 +                        │
+             └─────────────────────────────────────────┘ -->
+        <button class="btn btn-number" data-type="number" data-value="1" aria-label="1">1</button>
+        <button class="btn btn-number" data-type="number" data-value="2" aria-label="2">2</button>
+        <button class="btn btn-number" data-type="number" data-value="3" aria-label="3">3</button>
+        <button
+          class="btn btn-operator"
+          data-type="operator"
+          data-value="+"
+          aria-label="Add"
+        >+</button>
+
+
+        <!-- ┌─────────────────────────────────────────┐
+             │  ROW 5: 0 (wide) · . · =               │
+             └─────────────────────────────────────────┘ -->
+        <!--
+          The "0" button spans 2 grid columns.
+          This is achieved via `grid-column: span 2` in CSS.
+          See styles/style.css §E for the grid breakdown.
+        -->
+        <button
+          class="btn btn-number btn-zero"
+          data-type="number"
+          data-value="0"
+          aria-label="0"
+        >0</button>
+
+        <button
+          class="btn btn-number"
+          data-type="decimal"
+          data-value="."
+          aria-label="Decimal point"
+        >.</button>
+
+        <button
+          class="btn btn-equals"
+          data-type="equals"
+          data-value="="
+          aria-label="Equals, calculate result"
+          title="Calculate (Enter)"
+        >=</button>
+
+      </div>
+      <!-- END #button-grid -->
+
+    </section>
+    <!-- END .calculator -->
+
+
+    <!-- ═══════════════════════════════════
+         §C. EDUCATIONAL TUTORIAL PANEL
+         ─────────────────────────────────
+         <aside> holds content related to, but not part of,
+         the main content flow — perfect for tutorial notes.
+    ════════════════════════════════════ -->
+    <aside class="tutorial-panel" aria-label="Educational tutorial notes">
+
+      <h2 class="panel-heading">
+        <span class="panel-icon">📚</span> Tutorial Notes
+      </h2>
+
+      <!-- ── Note Cards: one per learning concept ──── -->
+      <div class="note-cards">
+
+        <!-- Card 1: Event Delegation -->
+        <div class="note-card" id="note-delegation" aria-label="Event delegation concept">
+          <h3 class="note-title">
+            <span class="note-icon">🎯</span> Event Delegation
+          </h3>
+          <p class="note-body">
+            A <em>single</em> listener on <code>#button-grid</code> handles every
+            button click. Events bubble up from child to parent — no loop needed.
+          </p>
+          <div class="note-badge">Concept 1 of 3</div>
+        </div>
+
+        <!-- Card 2: String Manipulation -->
+        <div class="note-card" id="note-string" aria-label="String manipulation concept">
+          <h3 class="note-title">
+            <span class="note-icon">🔤</span> String Manipulation
+          </h3>
+          <p class="note-body">
+            Numbers and operators are <em>concatenated</em> into an expression
+            string. Edge cases (double decimals, consecutive operators) are
+            caught by inspecting the string before appending.
+          </p>
+          <div class="note-badge">Concept 2 of 3</div>
+        </div>
+
+        <!-- Card 3: Custom Parser -->
+        <div class="note-card" id="note-parser" aria-label="Custom parser concept">
+          <h3 class="note-title">
+            <span class="note-icon">🧮</span> Custom Parser
+          </h3>
+          <p class="note-body">
+            No <code>eval()</code>. A <em>recursive descent parser</em> tokenises
+            the string and evaluates it with correct operator precedence
+            (× and ÷ before + and −).
+          </p>
+          <div class="note-badge">Concept 3 of 3</div>
+        </div>
+
+      </div>
+      <!-- END .note-cards -->
+
+      <!-- ── Live Event Log ──────────────────────────
+           Proves that ONE listener catches EVERY click.
+           aria-live="polite" announces new entries to screen readers.
+      ─────────────────────────────────────────────── -->
+      <div class="event-log-wrapper">
+        <h3 class="log-heading">
+          <span>⚡</span> Live Event Log
+          <span class="log-sub">— all caught by one listener</span>
+        </h3>
+        <ul
+          id="event-log"
+          aria-live="polite"
+          aria-label="Recent button click events"
+          aria-atomic="false"
+        ></ul>
+        <p class="log-empty" id="log-empty">Click a button to see events...</p>
+      </div>
+
+    </aside>
+    <!-- END .tutorial-panel -->
+
+  </main>
+  <!-- END .page-wrapper -->
+
+  <!--
+    The <script> tag is placed at the END of <body>.
+    ─────────────────────────────────────────────────
+    WHY? Because JavaScript that manipulates the DOM needs
+    the HTML elements to exist first. If the script runs in
+    the <head>, getElementById('button-grid') would return
+    null — the element doesn't exist yet!
+
+    Placing it here guarantees all HTML has been parsed
+    before our script runs.
+
+    (An alternative: use `defer` attribute in <head>, which
+    achieves the same effect: `<script src="..." defer>`)
+  -->
+  <script src="scripts/calculator.js"></script>
+
+</body>
+</html>
